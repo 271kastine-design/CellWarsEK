@@ -62,18 +62,20 @@ public class MyAI extends CellAI {
                             }
                         }
                     }
-                    else if(neighbors == 3) {
-                        if(GridFunctions.mostCommonNeighbor(r, c, grid) != MyID) {
-                            if(r-1 >= 0 && r+1 < grid.getRows() && c-1 >= 0 && c+1 < grid.getCols()) {
-                                if(Ids[r-1][c] != -1 && Ids[r+1][c] == -1){
-                                   if(Ids[r][c + 1] != -1) {
-                                        return new Location(r+2, c);
-                                    }
-                                    return new Location(r-2, c);
-                                }
-                            }
+                    if(neighbors == 3) {
+                        MyAIStillLife stillLife = new MyAIStillLife(MyID);
+                        Location stillLifeLocation = stillLife.select(grid);
+                        if (stillLifeLocation != null) {
+                            return stillLifeLocation;
                         }
                     }
+                }
+            }
+        }
+        for(int r = 0; r < grid.getRows(); r++) {
+            for (int c = 0; c < grid.getCols(); c++) {
+                if (Ids[r][c] != -1 && Ids[r][c] != MyID) {
+                    return new Location(r, c);
                 }
             }
         }
