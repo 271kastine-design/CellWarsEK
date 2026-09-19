@@ -32,7 +32,8 @@ class AISelectionResult {
 
     static AISelectionResult exception(Throwable throwable) {
         String detail = throwable == null ? "unknown error" : throwable.getClass().getSimpleName();
-        if (throwable != null && throwable.getMessage() != null && !throwable.getMessage().isBlank()) {
+        if (throwable != null && throwable.getMessage() != null
+            && !throwable.getMessage().trim().isEmpty()) {
             detail += ": " + throwable.getMessage();
         }
         return new AISelectionResult(Status.EXCEPTION, null, detail);

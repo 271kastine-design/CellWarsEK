@@ -113,7 +113,6 @@ public class Simulation {
     private volatile MatchEngine currentEngine;
     private TournamentStats stats;
     private List<CellAI> selectedAIs = new ArrayList<CellAI>();
-    private int matchSequence = 0;
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -383,7 +382,6 @@ public class Simulation {
         tournamentRunning = true;
         paused = false;
         stepRequested = false;
-        matchSequence = 0;
         stats = new TournamentStats(selectedAIs);
         eventLog.setText("");
         setSetupControlsEnabled(false);
@@ -524,7 +522,6 @@ public class Simulation {
                                      int tournament, int totalRuns, int round,
                                      int matchIndex, int replay, SafeAIInvoker invoker)
             throws InterruptedException {
-        matchSequence++;
         MatchEngine engine = new MatchEngine(participants, matchSeed);
         currentEngine = engine;
 
@@ -1006,7 +1003,6 @@ public class Simulation {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private List<Class<? extends CellAI>> discoverAIClasses() {
         Map<String, Class<? extends CellAI>> discovered =
                 new LinkedHashMap<String, Class<? extends CellAI>>();
@@ -1147,7 +1143,7 @@ public class Simulation {
     private String safeAIName(CellAI ai) {
         try {
             String name = ai.getAIName();
-            if (name != null && !name.isBlank()) {
+            if (name != null && !name.trim().isEmpty()) {
                 return name.trim();
             }
         }
@@ -1234,7 +1230,6 @@ public class Simulation {
             g.drawRect(offsetX, offsetY, boardSize - 1, boardSize - 1);
             g.dispose();
         }
-
         private void drawActionHighlight(Graphics2D g, TurnAction action, int rows, int cols,
                                          int boardSize, int offsetX, int offsetY) {
             int row = action.location.getRow();
