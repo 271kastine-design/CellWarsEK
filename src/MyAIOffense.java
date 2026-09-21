@@ -1,7 +1,7 @@
-public class MyAIStillLife {
+public final class MyAIOffense {
     private final int myID;
 
-    public MyAIStillLife(int myID) {
+    public MyAIOffense(int myID) {
         this.myID = myID;
     }
 
