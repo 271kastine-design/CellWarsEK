@@ -75,7 +75,9 @@ public class MyAI extends CellAI {
         for(int r = 0; r < grid.getRows(); r++) {
             for (int c = 0; c < grid.getCols(); c++) {
                 if (Ids[r][c] != -1 && Ids[r][c] != MyID) {
-                    return new Location(r, c);
+                    if(GridFunctions.getNeighbors(r, c, grid) == 3) {
+                        return new Location(r, c);
+                    }
                 }
             }
         }
