@@ -76,8 +76,25 @@ public class MyAI extends CellAI {
             for (int c = 0; c < grid.getCols(); c++) {
                 if (Ids[r][c] != -1 && Ids[r][c] != MyID) {
                     if(GridFunctions.getNeighbors(r, c, grid) == 3) {
-                        return new Location(r, c);
+                        if(GridFunctions.mostCommonNeighbor(r, c, grid) != MyID) {
+                            if(c == 0 || r == 0){
+                                return new Location(r, c + 2);
+                            }
+                            else if(c == 0 || r == grid.getRows() - 1) {
+                                return new Location(r, c + 2);
+                            }
+                            else if(c == grid.getCols() - 1 || r == 0) {
+                                return new Location(r, c - 2);
+                            }
+                            else if(c == grid.getCols() - 1 || r == grid.getRows() - 1) {
+                                return new Location(r, c - 2);
+                            }
+                            else{
+                                return new Location(r, c + 2);
+                            }
+                        }
                     }
+                    return new Location(r, c);
                 }
             }
         }
