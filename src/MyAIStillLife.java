@@ -18,9 +18,51 @@ public class MyAIStillLife {
             for (int c = 0; c < grid.getCols(); c++) {
                 if (grid.getCell(r, c) != myIDLocal && grid.getCell(r, c) != -1) {
                     int neighbors = GridFunctions.getNeighbors(r, c, grid);
-
                     if (neighbors == 3 && GridFunctions.mostCommonNeighbor(r, c, grid) != myIDLocal) {
-                        if (r - 1 >= 0 && r + 2 < grid.getRows() &&
+                        if (r - 1 >= 0 && r + 3 < grid.getRows()
+                            && c - 1 >= 0 && c + 3 < grid.getCols()) {
+
+                            boolean boatPattern =
+                                // empty border above
+                                ids[r - 1][c - 1] == -1
+                                && ids[r - 1][c] == -1
+                                && ids[r - 1][c + 1] == -1
+                                && ids[r - 1][c + 2] == -1
+                                && ids[r - 1][c + 3] == -1
+
+                                // pattern row 1
+                                && ids[r][c - 1] == -1
+                                && ids[r][c] == -1
+                                && ids[r][c + 1] != -1
+                                && ids[r][c + 2] != -1
+                                && ids[r][c + 3] == -1
+
+                                // pattern row 2
+                                && ids[r + 1][c - 1] == -1
+                                && ids[r + 1][c] != -1
+                                && ids[r + 1][c + 1] == -1
+                                && ids[r + 1][c + 2] != -1
+                                && ids[r + 1][c + 3] == -1
+
+                                // pattern row 3
+                                && ids[r + 2][c - 1] == -1
+                                && ids[r + 2][c] == -1
+                                && ids[r + 2][c + 1] != -1
+                                && ids[r + 2][c + 2] == -1
+                                && ids[r + 2][c + 3] == -1
+
+                                // empty border below
+                                && ids[r + 3][c - 1] == -1
+                                && ids[r + 3][c] == -1
+                                && ids[r + 3][c + 1] == -1
+                                && ids[r + 3][c + 2] == -1
+                                && ids[r + 3][c + 3] == -1;
+
+                            if (boatPattern) {
+                                return new Location(r + 1, c + 1);
+                            }
+                        }
+                        else if (r - 1 >= 0 && r + 2 < grid.getRows() &&
                             c - 1 >= 0 && c + 2 < grid.getCols()) {
 
                             boolean stillLife =
@@ -61,29 +103,55 @@ public class MyAIStillLife {
                                 return new Location(r, c);
                             }
                         }
-                    }
-                    if (r + 2 < grid.getRows() && c + 3 < grid.getCols() && c - 1 >= 0) {
-                        boolean sidewaysBracketPattern =
-                                ids[r][c - 1] == -1
-                                && ids[r][c] == -1
-                                && ids[r][c + 1] != -1
-                                && ids[r][c + 2] != -1
-                                && ids[r][c + 3] == -1
+                        else if (r + 2 < grid.getRows() && c + 3 < grid.getCols() && c - 1 >= 0) {
+                            boolean sidewaysBracketPattern =
+                                    ids[r][c - 1] == -1
+                                    && ids[r][c] == -1
+                                    && ids[r][c + 1] != -1
+                                    && ids[r][c + 2] != -1
+                                    && ids[r][c + 3] == -1
 
-                                && ids[r + 1][c - 1] == -1
-                                && ids[r + 1][c] != -1
-                                && ids[r + 1][c + 1] == -1
-                                && ids[r + 1][c + 2] == -1
-                                && ids[r + 1][c + 3] != -1
+                                    && ids[r + 1][c - 1] == -1
+                                    && ids[r + 1][c] != -1
+                                    && ids[r + 1][c + 1] == -1
+                                    && ids[r + 1][c + 2] == -1
+                                    && ids[r + 1][c + 3] != -1
 
-                                && ids[r + 2][c - 1] == -1
-                                && ids[r + 2][c] == -1
-                                && ids[r + 2][c + 1] != -1
-                                && ids[r + 2][c + 2] != -1
-                                && ids[r + 2][c + 3] == -1;
+                                    && ids[r + 2][c - 1] == -1
+                                    && ids[r + 2][c] == -1
+                                    && ids[r + 2][c + 1] != -1
+                                    && ids[r + 2][c + 2] != -1
+                                    && ids[r + 2][c + 3] == -1;
 
-                        if (sidewaysBracketPattern) {
-                            return new Location(r, c + 1);
+                            if (sidewaysBracketPattern) {
+                                return new Location(r, c);
+                            }
+                        }
+                        if (r + 4 < grid.getRows() && c + 3 < grid.getCols()) {
+                            boolean sidewaysStillLife =
+                                    ids[r][c] == -1
+                                    && ids[r][c + 1] != -1
+                                    && ids[r][c + 2] != -1
+                                    && ids[r][c + 3] == -1
+
+                                    && ids[r + 1][c] != -1
+                                    && ids[r + 1][c + 1] == -1
+                                    && ids[r + 1][c + 2] == -1
+                                    && ids[r + 1][c + 3] != -1
+
+                                    && ids[r + 2][c] != -1
+                                    && ids[r + 2][c + 1] == -1
+                                    && ids[r + 2][c + 2] == -1
+                                    && ids[r + 2][c + 3] != -1
+
+                                    && ids[r + 3][c] == -1
+                                    && ids[r + 3][c + 1] != -1
+                                    && ids[r + 3][c + 2] != -1
+                                    && ids[r + 3][c + 3] == -1;
+
+                            if (sidewaysStillLife) {
+                                return new Location(r + 4, c + 1);
+                            }
                         }
                     }
                 }

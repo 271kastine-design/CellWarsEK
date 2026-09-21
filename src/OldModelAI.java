@@ -53,7 +53,7 @@ public class OldModelAI extends CellAI {
                         }
                     }
                     if(neighbors == 3) {
-                        MyAIStillLife stillLife = new MyAIStillLife(MyID);
+                        MyAIStillLifeOld stillLife = new MyAIStillLifeOld(MyID);
                         Location stillLifeLocation = stillLife.select(grid);
                         if (stillLifeLocation != null) {
                             return stillLifeLocation;
