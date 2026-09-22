@@ -23,7 +23,7 @@ public class MyAIDefense {
                        x - x
                        x - x
                        - x - */
-                    if (neighbors == 2 && GridFunctions.mostCommonNeighbor(r, c, grid) != myIDLocal) {
+                    if (neighbors == 2 && GridFunctions.mostCommonNeighbor(r, c, grid) == myIDLocal) {
                         if (r + 3 < grid.getRows() && c - 2 >= 0 && c + 2 < grid.getCols()) {
                             boolean bracketPattern = ids[r][c] != -1
                                     && ids[r][c - 1] == -1 && ids[r][c + 1] == -1
@@ -66,7 +66,7 @@ public class MyAIDefense {
                         }
                     }
 
-                    if (neighbors == 3 && GridFunctions.mostCommonNeighbor(r, c, grid) != myIDLocal) {
+                    if (neighbors == 3 && GridFunctions.mostCommonNeighbor(r, c, grid) == myIDLocal) {
                         if (r - 1 >= 0 && r + 3 < grid.getRows()
                             && c - 1 >= 0 && c + 3 < grid.getCols()) {
 
