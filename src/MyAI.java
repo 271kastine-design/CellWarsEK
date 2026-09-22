@@ -43,23 +43,22 @@ public class MyAI extends CellAI {
                 }
             }
         }
-        if(Wcount <= Lcount){
+        if (Wcount <= Lcount) {
             MyAIDefense defense = new MyAIDefense(MyID);
             Location defenseLocation = defense.select(grid);
-            if(defenseLocation != null) {
+            if (defenseLocation != null) {
                 return defenseLocation;
             }
-        }
-        else{
+        } else {
             MyAIOffense offence = new MyAIOffense(MyID);
             Location offenceLocation = offence.select(grid);
-            if(offenceLocation != null) {
+            if (offenceLocation != null) {
                 return offenceLocation;
             }
         }
-        
-        //targets a 3 in a row ocilator
-        for(int r = 0; r < grid.getRows(); r++) {
+
+        // targets a 3-in-a-row oscillator
+        for (int r = 0; r < grid.getRows(); r++) {
             for (int c = 0; c < grid.getCols(); c++) {
                 if (Ids[r][c] != MyID && Ids[r][c] != -1) {
                     int neighbors = GridFunctions.getNeighbors(r, c, grid);
@@ -68,8 +67,8 @@ public class MyAI extends CellAI {
                     if (ocilatorLocation != null) {
                         return ocilatorLocation;
                     }
-                
-                    if(neighbors == 3) {
+
+                    if (neighbors == 3) {
                         MyAIOffense stillLife = new MyAIOffense(MyID);
                         Location stillLifeLocation = stillLife.select(grid);
                         if (stillLifeLocation != null) {
@@ -79,24 +78,21 @@ public class MyAI extends CellAI {
                 }
             }
         }
-        for(int r = 0; r < grid.getRows(); r++) {
+
+        for (int r = 0; r < grid.getRows(); r++) {
             for (int c = 0; c < grid.getCols(); c++) {
                 if (Ids[r][c] != -1 && Ids[r][c] != MyID) {
-                    if(GridFunctions.getNeighbors(r, c, grid) == 3) {
-                        if(GridFunctions.mostCommonNeighbor(r, c, grid) != MyID) {
-                            if(c == 0 || r == 0){
+                    if (GridFunctions.getNeighbors(r, c, grid) == 3) {
+                        if (GridFunctions.mostCommonNeighbor(r, c, grid) != MyID) {
+                            if (c == 0 || r == 0) {
                                 return new Location(r, c + 2);
-                            }
-                            else if(c == 0 || r == grid.getRows() - 1) {
+                            } else if (c == 0 || r == grid.getRows() - 1) {
                                 return new Location(r, c + 2);
-                            }
-                            else if(c == grid.getCols() - 1 || r == 0) {
+                            } else if (c == grid.getCols() - 1 || r == 0) {
                                 return new Location(r, c - 2);
-                            }
-                            else if(c == grid.getCols() - 1 || r == grid.getRows() - 1) {
+                            } else if (c == grid.getCols() - 1 || r == grid.getRows() - 1) {
                                 return new Location(r, c - 2);
-                            }
-                            else{
+                            } else {
                                 return new Location(r, c + 2);
                             }
                         }
@@ -105,6 +101,75 @@ public class MyAI extends CellAI {
                 }
             }
         }
+
         return new Location(randomInt(grid.getRows()), randomInt(grid.getCols()));
     }
+
+    private int[][] calculateNextBoard(int[][] board, int myIDLocal) {
+    int rows = board.length;
+    int cols = board[0].length;
+
+    int[][] nextBoard = new int[rows][cols];
+
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+
+            int neighbors = 0;
+            int myNeighbors = 0;
+            int opponentNeighbors = 0;
+            int opponentID = -1;
+
+            for (int dr = -1; dr <= 1; dr++) {
+                for (int dc = -1; dc <= 1; dc++) {
+
+                    if (dr == 0 && dc == 0) {
+                        continue;
+                    }
+
+                    int nr = r + dr;
+                    int nc = c + dc;
+
+                    if (nr >= 0 && nr < rows
+                            && nc >= 0 && nc < cols
+                            && board[nr][nc] != -1) {
+
+                        neighbors++;
+
+                        if (board[nr][nc] == myIDLocal) {
+                            myNeighbors++;
+                        } else {
+                            opponentNeighbors++;
+                            opponentID = board[nr][nc];
+                        }
+                    }
+                }
+            }
+
+            if (board[r][c] != -1) {
+
+                if (neighbors == 2 || neighbors == 3) {
+                    nextBoard[r][c] = board[r][c];
+                } else {
+                    nextBoard[r][c] = -1;
+                }
+
+            } else {
+
+                if (neighbors == 3) {
+
+                    if (myNeighbors > opponentNeighbors) {
+                        nextBoard[r][c] = myIDLocal;
+                    } else {
+                        nextBoard[r][c] = opponentID;
+                    }
+
+                } else {
+                    nextBoard[r][c] = -1;
+                }
+            }
+        }
+    }
+
+    return nextBoard;
+}
 }
