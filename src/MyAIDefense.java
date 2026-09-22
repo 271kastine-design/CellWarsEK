@@ -40,7 +40,7 @@ public class MyAIDefense {
                         /* - x x -
                            x - - x
                            - x x - */
-                        else if (r + 2 < grid.getRows() && c + 3 < grid.getCols() && c - 1 >= 0) {
+                        if (r + 2 < grid.getRows() && c + 3 < grid.getCols() && c - 1 >= 0) {
                             boolean sidewaysBracketPattern =
                                     ids[r][c - 1] == -1
                                     && ids[r][c] == -1
@@ -107,9 +107,9 @@ public class MyAIDefense {
                                 && ids[r + 3][c + 3] == -1;
 
                             if (boatPattern) {
-                                return new Location(r + 1, c + 1);
+                                return new Location(r + 1, c);
                             }
-                        } else if (r - 1 >= 0 && r + 2 < grid.getRows()
+                        }if (r - 1 >= 0 && r + 2 < grid.getRows()
                                 && c - 1 >= 0 && c + 2 < grid.getCols()) {
 
                             boolean stillLife =
