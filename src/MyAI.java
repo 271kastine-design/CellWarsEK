@@ -109,33 +109,58 @@ public class MyAI extends CellAI {
 
     @Override
     public Location select(Grid grid) {
-
         int[][] currentBoard = new int[grid.getRows()][grid.getCols()];
 
-    for (int r = 0; r < grid.getRows(); r++) {
-        for (int c = 0; c < grid.getCols(); c++) {
-            currentBoard[r][c] = grid.getCell(r, c);
+        for (int r = 0; r < grid.getRows(); r++) {
+            for (int c = 0; c < grid.getCols(); c++) {
+                currentBoard[r][c] = grid.getCell(r, c);
+            }
         }
-    }
 
-    int bestScore = Integer.MIN_VALUE;
-    Location bestMove = null;
+        int[] bestQuickScores = {
+            Integer.MIN_VALUE,
+            Integer.MIN_VALUE,
+            Integer.MIN_VALUE,
+            Integer.MIN_VALUE,
+            Integer.MIN_VALUE
+        };
 
-    for (int r = 0; r < grid.getRows(); r++) {
-        for (int c = 0; c < grid.getCols(); c++) {
+        Location[] bestQuickMoves = new Location[5];
 
-            if (currentBoard[r][c] == -1
-                    && GridFunctions.mostCommonNeighbor(r, c, grid) != MyID) {
+        for (int r = 0; r < grid.getRows(); r++) {
+            for (int c = 0; c < grid.getCols(); c++) {
+                if (currentBoard[r][c] == -1) {
+                    int score = quickScore(currentBoard, r, c, MyID);
 
+                    for (int i = 0; i < 5; i++) {
+                        if (score > bestQuickScores[i]) {
+                            for (int j = 4; j > i; j--) {
+                                bestQuickScores[j] = bestQuickScores[j - 1];
+                                bestQuickMoves[j] = bestQuickMoves[j - 1];
+                            }
+
+                            bestQuickScores[i] = score;
+                            bestQuickMoves[i] = new Location(r, c);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        int bestScore = Integer.MIN_VALUE;
+        Location bestMove = null;
+
+        for (int i = 0; i < 5; i++) {
+            if (bestQuickMoves[i] != null) {
+                Location move = bestQuickMoves[i];
                 int[][] newBoard = copyBoard(currentBoard);
-
-                newBoard[r][c] = MyID;
+                newBoard[move.getRow()][move.getCol()] = MyID;
 
                 int[][] futureBoard = calculateNextBoard(newBoard, MyID);
-
                 int score = alphaBetaPruning(
                     futureBoard,
-                    1,
+                    6,
                     Integer.MIN_VALUE,
                     Integer.MAX_VALUE,
                     false
@@ -143,25 +168,52 @@ public class MyAI extends CellAI {
 
                 if (score > bestScore) {
                     bestScore = score;
-                    bestMove = new Location(r, c);
+                    bestMove = move;
                 }
             }
         }
-    }
 
-    // Safety fallback
-    if (bestMove == null) {
-        for (int r = 0; r < grid.getRows(); r++) {
-            for (int c = 0; c < grid.getCols(); c++) {
-                if (currentBoard[r][c] == -1) {
-                    return new Location(r, c);
+        if (bestMove == null) {
+            for (int r = 0; r < grid.getRows(); r++) {
+                for (int c = 0; c < grid.getCols(); c++) {
+                    if (currentBoard[r][c] == -1) {
+                        return new Location(r, c);
+                    }
                 }
             }
         }
+
+        return bestMove;
     }
 
-    return bestMove;
-}
+    private int quickScore(int[][] board, int r, int c, int playerID) {
+        int myNeighbors = 0;
+        int opponentNeighbors = 0;
+
+        for (int ar = -1; ar <= 1; ar++) {
+            for (int ac = -1; ac <= 1; ac++) {
+                if (ar == 0 && ac == 0) {
+                    continue;
+                }
+
+                int br = r + ar;
+                int bc = c + ac;
+
+                if (br >= 0 && br < board.length
+                        && bc >= 0 && bc < board[0].length
+                        && board[br][bc] != -1) {
+                    if (board[br][bc] == playerID) {
+                        myNeighbors++;
+                    } else {
+                        opponentNeighbors++;
+                    }
+                }
+            }
+        }
+
+        return myNeighbors * 3 - opponentNeighbors;
+    }
+
     public int[][] copyBoard(int[][] board) {
         int[][] newBoard = new int[board.length][board[0].length];
         for (int i = 0; i < board.length; i++) {
@@ -171,65 +223,107 @@ public class MyAI extends CellAI {
         }
         return newBoard;
     }
+    public Location[] top5Moves(int[][] board, int playerID) {
+        Location[] topMoves = new Location[5];
+        int[] scores = new int[5];
+
+        for (int r = 0; r < board.length; r++) {
+            for (int c = 0; c < board[0].length; c++) {
+                if (board[r][c] == -1) {
+                    int score = quickScore(board, r, c, playerID);
+                    for (int i = 0; i < 5; i++) {
+                        if (score > scores[i]) {
+                            for (int j = 4; j > i; j--) {
+                                scores[j] = scores[j - 1];
+                                topMoves[j] = topMoves[j - 1];
+                            }
+                            scores[i] = score;
+                            topMoves[i] = new Location(r, c);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return topMoves;
+    }
     public int alphaBetaPruning(int[][] board, int depth, int alpha, int beta, boolean isMaximizing) {
         if (depth == 0) {
             return evaluateBoard(board);
         }
+
+        int opponentID = findOpponentID(board);
+
         if (isMaximizing) {
             int bestScore = Integer.MIN_VALUE;
+            Location[] moves = top5Moves(board, MyID);
 
-            for (int r = 0; r < board.length; r++) {
-                for (int c = 0; c < board[0].length; c++) {
-                     int[][] newBoard = new int[board.length][board[0].length];
-
-                     for (int i = 0; i < board.length; i++) {
-                         for (int j = 0; j < board[0].length; j++) {
-                             newBoard[i][j] = board[i][j];
-                         }
-                     }
-                     newBoard[r][c] = MyID;
-                     int[][] futureBoard = calculateNextBoard(newBoard, MyID);
-
-                     int score = alphaBetaPruning(futureBoard, depth - 1, alpha, beta, false);
-                     bestScore = Math.max(bestScore, score);
-                     alpha = Math.max(alpha, bestScore);
-                     if (alpha >= beta) {
-                         break;
-                     } 
+            for (int i = 0; i < moves.length; i++) {
+                if (moves[i] == null) {
+                    continue;
                 }
-                if (alpha >= beta) {
-                            break;
+
+                int r = moves[i].getRow();
+                int c = moves[i].getCol();
+
+                if (board[r][c] == -1) {
+                    int[][] newBoard = copyBoard(board);
+                    newBoard[r][c] = MyID;
+
+                    int[][] futureBoard = calculateNextBoard(newBoard, MyID);
+                    int score = alphaBetaPruning(futureBoard, depth - 1, alpha, beta, false);
+
+                    bestScore = Math.max(bestScore, score);
+                    alpha = Math.max(alpha, bestScore);
+
+                    if (alpha >= beta) {
+                        return bestScore;
+                    }
                 }
             }
+
             return bestScore;
         } else {
             int bestScore = Integer.MAX_VALUE;
+            Location[] moves = top5Moves(board, opponentID);
 
-            for (int r = 0; r < board.length; r++) {
-                for (int c = 0; c < board[0].length; c++) {
-                     int[][] newBoard = new int[board.length][board[0].length];
-
-                     for (int i = 0; i < board.length; i++) {
-                         for (int j = 0; j < board[0].length; j++) {
-                             newBoard[i][j] = board[i][j];
-                         }
-                     }
-                     newBoard[r][c] = MyID;
-                     int[][] futureBoard = calculateNextBoard(newBoard, MyID);
-
-                     int score = alphaBetaPruning(futureBoard, depth - 1, alpha, beta, true);
-                     bestScore = Math.min(bestScore, score);
-                     beta = Math.min(beta, bestScore);
-                     if (alpha >= beta) {
-                         break;
-                     } 
+            for (int i = 0; i < moves.length; i++) {
+                if (moves[i] == null) {
+                    continue;
                 }
-                if (alpha >= beta) {
-                            break;
+
+                int r = moves[i].getRow();
+                int c = moves[i].getCol();
+
+                if (board[r][c] == -1) {
+                    int[][] newBoard = copyBoard(board);
+                    newBoard[r][c] = opponentID;
+
+                    int[][] futureBoard = calculateNextBoard(newBoard, opponentID);
+                    int score = alphaBetaPruning(futureBoard, depth - 1, alpha, beta, true);
+
+                    bestScore = Math.min(bestScore, score);
+                    beta = Math.min(beta, bestScore);
+
+                    if (alpha >= beta) {
+                        return bestScore;
+                    }
                 }
             }
-            return bestScore; 
+
+            return bestScore;
         }
+    }
+
+    public int findOpponentID(int[][] board) {
+        for (int r = 0; r < board.length; r++) {
+            for (int c = 0; c < board[0].length; c++) {
+                if (board[r][c] != -1 && board[r][c] != MyID) {
+                    return board[r][c];
+                }
+            }
+        }
+        return -1;
     }
 
     public int evaluateBoard(int[][] board) {
@@ -252,12 +346,10 @@ public class MyAI extends CellAI {
     private int[][] calculateNextBoard(int[][] board, int myIDLocal) {
         int rows = board.length;
         int cols = board[0].length;
-
         int[][] nextBoard = new int[rows][cols];
 
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-
                 int neighbors = 0;
                 int myNeighbors = 0;
                 int opponentNeighbors = 0;
@@ -265,7 +357,6 @@ public class MyAI extends CellAI {
 
                 for (int dr = -1; dr <= 1; dr++) {
                     for (int dc = -1; dc <= 1; dc++) {
-
                         if (dr == 0 && dc == 0) {
                             continue;
                         }
@@ -273,10 +364,7 @@ public class MyAI extends CellAI {
                         int nr = r + dr;
                         int nc = c + dc;
 
-                        if (nr >= 0 && nr < rows
-                                && nc >= 0 && nc < cols
-                                && board[nr][nc] != -1) {
-
+                        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc] != -1) {
                             neighbors++;
 
                             if (board[nr][nc] == myIDLocal) {
@@ -290,23 +378,18 @@ public class MyAI extends CellAI {
                 }
 
                 if (board[r][c] != -1) {
-
                     if (neighbors == 2 || neighbors == 3) {
                         nextBoard[r][c] = board[r][c];
                     } else {
                         nextBoard[r][c] = -1;
                     }
-
                 } else {
-
                     if (neighbors == 3) {
-
                         if (myNeighbors > opponentNeighbors) {
                             nextBoard[r][c] = myIDLocal;
                         } else {
                             nextBoard[r][c] = opponentID;
                         }
-
                     } else {
                         nextBoard[r][c] = -1;
                     }
