@@ -14,7 +14,7 @@ public class MyAI extends CellAI {
     public String getAIName() {
         return "MyAI - ChipAI";
     }
-
+    /* 
     @Override
     public Location select(Grid grid) {
         /*
@@ -28,7 +28,7 @@ public class MyAI extends CellAI {
          *   GridFunctions.getNeighbors  -> number of living neighbors
          *   GridFunctions.mostCommonNeighbor -> most common neighboring AI
          *   randomInt(bound)            -> reproducible random integer
-         */
+        
         int MyID = getID();
         int Wcount = 0;
         int Lcount = 0;
@@ -104,72 +104,65 @@ public class MyAI extends CellAI {
 
         return new Location(randomInt(grid.getRows()), randomInt(grid.getCols()));
     }
-
-    private int[][] calculateNextBoard(int[][] board, int myIDLocal) {
-    int rows = board.length;
-    int cols = board[0].length;
-
-    int[][] nextBoard = new int[rows][cols];
-
-    for (int r = 0; r < rows; r++) {
-        for (int c = 0; c < cols; c++) {
-
-            int neighbors = 0;
-            int myNeighbors = 0;
-            int opponentNeighbors = 0;
-            int opponentID = -1;
-
-            for (int dr = -1; dr <= 1; dr++) {
-                for (int dc = -1; dc <= 1; dc++) {
-
-                    if (dr == 0 && dc == 0) {
-                        continue;
-                    }
-
-                    int nr = r + dr;
-                    int nc = c + dc;
-
-                    if (nr >= 0 && nr < rows
-                            && nc >= 0 && nc < cols
-                            && board[nr][nc] != -1) {
-
-                        neighbors++;
-
-                        if (board[nr][nc] == myIDLocal) {
-                            myNeighbors++;
-                        } else {
-                            opponentNeighbors++;
-                            opponentID = board[nr][nc];
-                        }
-                    }
-                }
-            }
-
-            if (board[r][c] != -1) {
-
-                if (neighbors == 2 || neighbors == 3) {
-                    nextBoard[r][c] = board[r][c];
-                } else {
-                    nextBoard[r][c] = -1;
-                }
-
-            } else {
-
-                if (neighbors == 3) {
-
-                    if (myNeighbors > opponentNeighbors) {
-                        nextBoard[r][c] = myIDLocal;
-                    } else {
-                        nextBoard[r][c] = opponentID;
-                    }
-
-                } else {
-                    nextBoard[r][c] = -1;
+ */
+    int MyID = getID();
+    @Override
+    public Location select(Grid grid) {
+        int Wcount = 0;
+        int Lcount = 0;
+        for (int r = 0; r < grid.getRows(); r++) {
+            for (int c = 0; c < grid.getCols(); c++) {
+                if (grid.getCell(r, c) == MyID) {
+                    // existing logic can go here
+                    Wcount++;
+                } else if (grid.getCell(r, c) != -1) {
+                    Lcount++;
                 }
             }
         }
-    }
+        if (Wcount > Lcount) {
+            MyAIOffense offense = new MyAIOffense(MyID);
+            Location offenseLocation = offense.select(grid);
+            if (offenseLocation != null) {
+                return offenseLocation;
+            }
+        }
+        else{
+            MyAIDefense defense = new MyAIDefense(MyID);
+            Location defenseLocation = defense.select(grid);
+            if (defenseLocation != null) {
+                return defenseLocation;
+            }
+        }
+        int[][] Ids = new int[grid.getRows()][grid.getCols()];
+        for (int r = 0; r < grid.getRows(); r++) {
+            for (int c = 0; c < grid.getCols(); c++) {
+                Ids[r][c] = grid.getCell(r, c);
+            }
+        }
+        for (int r = 0; r < grid.getRows(); r++) {
+            for (int c = 0; c < grid.getCols(); c++) {
+                if (Ids[r][c] != -1 && Ids[r][c] != MyID) {
+                    if (GridFunctions.getNeighbors(r, c, grid) == 3) {
+                        if (GridFunctions.mostCommonNeighbor(r, c, grid) != MyID) {
+                            if (c == 0 || r == 0) {
+                                return new Location(r, c + 2);
+                            } else if (c == 0 || r == grid.getRows() - 1) {
+                                return new Location(r, c + 2);
+                            } else if (c == grid.getCols() - 1 || r == 0) {
+                                return new Location(r, c - 2);
+                            } else if (c == grid.getCols() - 1 || r == grid.getRows() - 1) {
+                                return new Location(r, c - 2);
+                            } else {
+                                return new Location(r, c + 2);
+                            }
+                        }
+                    }
+                    return new Location(r, c);
+                }
+            }
+        }
 
-    return nextBoard;
-}
+        return new Location(0, 0);
+    }
 }

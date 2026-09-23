@@ -1,14 +1,14 @@
-public class MyAIDefense {
-    private final int myID;
-
-    public MyAIDefense(int myID) {
-        this.myID = myID;
+public class MyAIOldV2 extends MyAI {
+    @Override
+    public String getAIName() {
+        return "MyAI - TrainerAIV2";
     }
-
+    int MyID = getID();
+    @Override
     public Location select(Grid grid) {
         int bestScore = -1000000;
         Location bestMove = null;
-        int myIDLocal = myID;
+        int myIDLocal = getID();
         int[][] ids = new int[grid.getRows()][grid.getCols()];
 
         for (int r = 0; r < grid.getRows(); r++) {
