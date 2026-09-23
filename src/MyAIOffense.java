@@ -1,4 +1,4 @@
-public final class MyAIOffense {
+public class MyAIOffense {
     private final int myID;
 
     public MyAIOffense(int myID) {
@@ -6,7 +6,9 @@ public final class MyAIOffense {
     }
 
     public Location select(Grid grid) {
-        final int myIDLocal = myID;
+        int bestScore = -1000000;
+        Location bestMove = null;
+        int myIDLocal = myID;
         int[][] ids = new int[grid.getRows()][grid.getCols()];
 
         for (int r = 0; r < grid.getRows(); r++) {
@@ -17,148 +19,154 @@ public final class MyAIOffense {
 
         for (int r = 0; r < grid.getRows(); r++) {
             for (int c = 0; c < grid.getCols(); c++) {
-                if (r >= 1 && r + 3 < grid.getRows()
-                        && c >= 1 && c + 3 < grid.getCols()) {
-                    boolean boatPattern =
-                            ids[r - 1][c - 1] == -1
-                            && ids[r - 1][c] == -1
-                            && ids[r - 1][c + 1] == -1
-                            && ids[r - 1][c + 2] == -1
-                            && ids[r - 1][c + 3] == -1
-                            && ids[r][c - 1] == -1
-                            && ids[r][c] == -1
-                            && ids[r][c + 1] != -1
-                            && ids[r][c + 2] != -1
-                            && ids[r][c + 3] == -1
-                            && ids[r + 1][c - 1] == -1
-                            && ids[r + 1][c] != -1
-                            && ids[r + 1][c + 1] == -1
-                            && ids[r + 1][c + 2] != -1
-                            && ids[r + 1][c + 3] == -1
-                            && ids[r + 2][c - 1] == -1
-                            && ids[r + 2][c] == -1
-                            && ids[r + 2][c + 1] != -1
-                            && ids[r + 2][c + 2] == -1
-                            && ids[r + 2][c + 3] == -1
-                            && ids[r + 3][c - 1] == -1
-                            && ids[r + 3][c] == -1
-                            && ids[r + 3][c + 1] == -1
-                            && ids[r + 3][c + 2] == -1
-                            && ids[r + 3][c + 3] == -1;
 
-                    if (boatPattern) {
-                        return new Location(r + 1, c + 1);
+                // Only consider empty spaces as possible moves
+                if (ids[r][c] == -1) {
+
+                    // Make a copy of the current board
+                    int[][] testBoard = new int[grid.getRows()][grid.getCols()];
+
+                    for (int i = 0; i < grid.getRows(); i++) {
+                        for (int j = 0; j < grid.getCols(); j++) {
+                            testBoard[i][j] = ids[i][j];
+                        }
+                    }
+
+                    // Pretend we make this move
+                    testBoard[r][c] = myIDLocal;
+
+                    // Predict the board one turn into the future
+                    int[][] futureBoard = calculateNextBoard(testBoard, myIDLocal);
+
+                    // Count our cells and opponent cells
+                    int myFutureCells = 0;
+                    int opponentFutureCells = 0;
+
+                    // Count opponent cells that are vulnerable
+                    int vulnerableOpponentCells = 0;
+
+                    for (int i = 0; i < grid.getRows(); i++) {
+                        for (int j = 0; j < grid.getCols(); j++) {
+
+                            if (futureBoard[i][j] == myIDLocal) {
+                                myFutureCells++;
+
+                            } else if (futureBoard[i][j] != -1) {
+                                opponentFutureCells++;
+
+                                // Check how many neighbors this opponent cell has
+                                int neighbors = 0;
+
+                                for (int dr = -1; dr <= 1; dr++) {
+                                    for (int dc = -1; dc <= 1; dc++) {
+
+                                        if (dr == 0 && dc == 0) {
+                                            continue;
+                                        }
+
+                                        int nr = i + dr;
+                                        int nc = j + dc;
+
+                                        if (nr >= 0 && nr < grid.getRows()
+                                                && nc >= 0 && nc < grid.getCols()
+                                                && futureBoard[nr][nc] != -1) {
+                                            neighbors++;
+                                        }
+                                    }
+                                }
+
+                                // Fewer than 2 or more than 3 neighbors
+                                // means this cell will die
+                                if (neighbors < 2 || neighbors > 3) {
+                                    vulnerableOpponentCells++;
+                                }
+                            }
+                        }
+                    }
+
+                    // Our cells minus opponent cells,
+                    // plus vulnerable opponent cells
+                    int score = myFutureCells
+                              - opponentFutureCells
+                              + vulnerableOpponentCells;
+
+                    // Keep the move with the best score
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = new Location(r, c);
                     }
                 }
             }
         }
 
-        for (int r = 0; r < grid.getRows(); r++) {
-            for (int c = 0; c < grid.getCols(); c++) {
-                if (grid.getCell(r, c) != myIDLocal && grid.getCell(r, c) != -1) {
-                    int neighbors = GridFunctions.getNeighbors(r, c, grid);
-                    if (neighbors == 3 && GridFunctions.mostCommonNeighbor(r, c, grid) != myIDLocal) {
-                        if (r - 1 >= 0 && r + 2 < grid.getRows() &&
-                            c - 1 >= 0 && c + 2 < grid.getCols()) {
+        return bestMove;
+    }
 
-                            boolean stillLife =
-                                ids[r - 1][c - 1] == -1 &&
-                                ids[r - 1][c] == -1 &&
-                                ids[r - 1][c + 1] == -1 &&
-                                ids[r - 1][c + 2] == -1 &&
-                                ids[r][c - 1] == -1 &&
-                                ids[r][c] != -1 &&
-                                ids[r][c + 1] != -1 &&
-                                ids[r][c + 2] == -1 &&
-                                ids[r + 1][c - 1] == -1 &&
-                                ids[r + 1][c] != -1 &&
-                                ids[r + 1][c + 1] != -1 &&
-                                ids[r + 1][c + 2] == -1 &&
-                                ids[r + 2][c - 1] == -1 &&
-                                ids[r + 2][c] == -1 &&
-                                ids[r + 2][c + 1] == -1 &&
-                                ids[r + 2][c + 2] == -1;
+    private int[][] calculateNextBoard(int[][] board, int myIDLocal) {
+        int rows = board.length;
+        int cols = board[0].length;
 
-                            if (stillLife) {
-                                return new Location(r, c - 1);
+        int[][] nextBoard = new int[rows][cols];
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+
+                int neighbors = 0;
+                int myNeighbors = 0;
+                int opponentNeighbors = 0;
+                int opponentID = -1;
+
+                for (int dr = -1; dr <= 1; dr++) {
+                    for (int dc = -1; dc <= 1; dc++) {
+
+                        if (dr == 0 && dc == 0) {
+                            continue;
+                        }
+
+                        int nr = r + dr;
+                        int nc = c + dc;
+
+                        if (nr >= 0 && nr < rows
+                                && nc >= 0 && nc < cols
+                                && board[nr][nc] != -1) {
+
+                            neighbors++;
+
+                            if (board[nr][nc] == myIDLocal) {
+                                myNeighbors++;
+                            } else {
+                                opponentNeighbors++;
+                                opponentID = board[nr][nc];
                             }
                         }
                     }
+                }
 
-                    if (neighbors == 2 && GridFunctions.mostCommonNeighbor(r, c, grid) != myIDLocal) {
-                        if (r + 3 < grid.getRows() && c - 2 >= 0 && c + 2 < grid.getCols()) {
-                            boolean bracketPattern = ids[r][c] != -1
-                                    && ids[r][c - 1] == -1 && ids[r][c + 1] == -1
-                                    && ids[r + 1][c] == -1 && ids[r + 1][c - 1] != -1 && ids[r + 1][c + 1] != -1
-                                    && ids[r + 2][c] == -1 && ids[r + 2][c - 1] != -1 && ids[r + 2][c + 1] != -1
-                                    && ids[r + 3][c] != -1 && ids[r + 3][c - 1] == -1 && ids[r + 3][c + 1] == -1
-                                    && ids[r][c - 2] == -1 && ids[r + 1][c - 2] == -1 && ids[r + 2][c - 2] == -1 && ids[r + 3][c - 2] == -1
-                                    && ids[r][c + 2] == -1 && ids[r + 1][c + 2] == -1 && ids[r + 2][c + 2] == -1 && ids[r + 3][c + 2] == -1;
+                if (board[r][c] != -1) {
 
-                            if (bracketPattern) {
-                                return new Location(r, c);
-                            }
+                    if (neighbors == 2 || neighbors == 3) {
+                        nextBoard[r][c] = board[r][c];
+                    } else {
+                        nextBoard[r][c] = -1;
+                    }
+
+                } else {
+
+                    if (neighbors == 3) {
+
+                        if (myNeighbors > opponentNeighbors) {
+                            nextBoard[r][c] = myIDLocal;
+                        } else {
+                            nextBoard[r][c] = opponentID;
                         }
-                        else if (r + 2 < grid.getRows() && c + 3 < grid.getCols() && c - 1 >= 0) {
-                            boolean sidewaysBracketPattern =
-                                    ids[r][c - 1] == -1
-                                    && ids[r][c] == -1
-                                    && ids[r][c + 1] != -1
-                                    && ids[r][c + 2] != -1
-                                    && ids[r][c + 3] == -1
 
-                                    && ids[r + 1][c - 1] == -1
-                                    && ids[r + 1][c] != -1
-                                    && ids[r + 1][c + 1] == -1
-                                    && ids[r + 1][c + 2] == -1
-                                    && ids[r + 1][c + 3] != -1
-
-                                    && ids[r + 2][c - 1] == -1
-                                    && ids[r + 2][c] == -1
-                                    && ids[r + 2][c + 1] != -1
-                                    && ids[r + 2][c + 2] != -1
-                                    && ids[r + 2][c + 3] == -1;
-
-                            if (sidewaysBracketPattern) {
-                                return new Location(r, c);
-                            }
-                        }
-                        if (r + 4 < grid.getRows() && c + 3 < grid.getCols()) {
-                            boolean sidewaysStillLife =
-                                    ids[r][c] == -1
-                                    && ids[r][c + 1] != -1
-                                    && ids[r][c + 2] != -1
-                                    && ids[r][c + 3] == -1
-
-                                    && ids[r + 1][c] != -1
-                                    && ids[r + 1][c + 1] == -1
-                                    && ids[r + 1][c + 2] == -1
-                                    && ids[r + 1][c + 3] != -1
-
-                                    && ids[r + 2][c] != -1
-                                    && ids[r + 2][c + 1] == -1
-                                    && ids[r + 2][c + 2] == -1
-                                    && ids[r + 2][c + 3] != -1
-
-                                    && ids[r + 3][c] == -1
-                                    && ids[r + 3][c + 1] != -1
-                                    && ids[r + 3][c + 2] != -1
-                                    && ids[r + 3][c + 3] == -1;
-
-                            if (sidewaysStillLife) {
-                                return new Location(r + 4, c + 1);
-                            }
-                        }
+                    } else {
+                        nextBoard[r][c] = -1;
                     }
                 }
             }
         }
 
-        Location oscillatorMove = new MyAIOscilator(myIDLocal).select(grid);
-        if (oscillatorMove != null) {
-            return oscillatorMove;
-        }
-
-        return null;
+        return nextBoard;
     }
 }
