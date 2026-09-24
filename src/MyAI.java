@@ -117,6 +117,8 @@ public class MyAI extends CellAI {
             }
         }
 
+        int[] cellCounts = countCells(currentBoard, MyID);
+
         int[] bestQuickScores = {
             Integer.MIN_VALUE,
             Integer.MIN_VALUE,
@@ -130,7 +132,14 @@ public class MyAI extends CellAI {
         for (int r = 0; r < grid.getRows(); r++) {
             for (int c = 0; c < grid.getCols(); c++) {
                 if (currentBoard[r][c] == -1) {
-                    int score = quickScore(currentBoard, r, c, MyID);
+                    int score = quickScore(
+                        currentBoard,
+                        r,
+                        c,
+                        MyID,
+                        cellCounts[0],
+                        cellCounts[1]
+                    );
 
                     for (int i = 0; i < 5; i++) {
                         if (score > bestQuickScores[i]) {
@@ -186,10 +195,33 @@ public class MyAI extends CellAI {
         return bestMove;
     }
 
-    private int quickScore(int[][] board, int r, int c, int playerID) {
+    private int[] countCells(int[][] board, int playerID) {
+        int myCells = 0;
+        int opponentCells = 0;
+
+        for (int r = 0; r < board.length; r++) {
+            for (int c = 0; c < board[0].length; c++) {
+                if (board[r][c] == playerID) {
+                    myCells++;
+                } else if (board[r][c] != -1) {
+                    opponentCells++;
+                }
+            }
+        }
+
+        return new int[] { myCells, opponentCells };
+    }
+
+    private int quickScore(
+        int[][] board,
+        int r,
+        int c,
+        int playerID,
+        int myCells,
+        int opponentCells
+    ) {
         int myNeighbors = 0;
         int opponentNeighbors = 0;
-
         for (int ar = -1; ar <= 1; ar++) {
             for (int ac = -1; ac <= 1; ac++) {
                 if (ar == 0 && ac == 0) {
@@ -210,8 +242,20 @@ public class MyAI extends CellAI {
                 }
             }
         }
+        if(opponentCells * 10 < myCells) {
+            return opponentNeighbors * 4 - myNeighbors;
+        }
+        else if(opponentCells * 5 < myCells) {
+            return opponentNeighbors * 3 + myNeighbors;
+        } else if(opponentCells * 2 < myCells) {
+            return opponentNeighbors * 2 + myNeighbors;
+        } else if (myCells > opponentCells) {
+            return myNeighbors*2 + opponentNeighbors*2;
+        }
+        else{
+            return myNeighbors*3 - opponentNeighbors;
+        }
 
-        return myNeighbors * 3 - opponentNeighbors;
     }
 
     public int[][] copyBoard(int[][] board) {
@@ -226,11 +270,19 @@ public class MyAI extends CellAI {
     public Location[] top5Moves(int[][] board, int playerID) {
         Location[] topMoves = new Location[5];
         int[] scores = new int[5];
+        int[] cellCounts = countCells(board, playerID);
 
         for (int r = 0; r < board.length; r++) {
             for (int c = 0; c < board[0].length; c++) {
                 if (board[r][c] == -1) {
-                    int score = quickScore(board, r, c, playerID);
+                    int score = quickScore(
+                        board,
+                        r,
+                        c,
+                        playerID,
+                        cellCounts[0],
+                        cellCounts[1]
+                    );
                     for (int i = 0; i < 5; i++) {
                         if (score > scores[i]) {
                             for (int j = 4; j > i; j--) {
