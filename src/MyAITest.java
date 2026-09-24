@@ -8,11 +8,12 @@
  * Replace this comment with a short explanation of the strategy your AI uses.
  * Your final strategy must be fundamentally different from the sample AIs.
  */
-public class MyAI extends CellAI {
+public class MyAITest extends CellAI {
+
 
     @Override
     public String getAIName() {
-        return "MyAI - ChipAI";
+        return "MyAI - SuperAI";
     }
     /* 
     @Override
@@ -211,7 +212,7 @@ public class MyAI extends CellAI {
             }
         }
 
-        return myNeighbors * 3 - opponentNeighbors;
+        return myNeighbors * 2 + opponentNeighbors * 2;
     }
 
     public int[][] copyBoard(int[][] board) {
