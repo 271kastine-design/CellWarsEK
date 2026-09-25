@@ -233,6 +233,7 @@ public class ChipAI extends CellAI {
     // Big-O magnitude: this search is roughly O(b^d), where b is the branching factor (about the top moves
     // considered at each step) and d is the lookahead depth. With a board of size R x C and a top-5 shortlist,
     // each level scans the board and simulates candidate moves, so the practical cost is still exponential in depth
+    //D = 5 and b = 5, but much smaller than exploring every legal move on every turn.
     // but much smaller than exploring every legal move on every turn.
     // Alpha-beta pruning is used to reduce unnecessary search branches in the minimax tree.
     // It assumes the AI is maximizing its evaluation while the opponent minimizes it.
