@@ -15,98 +15,6 @@ public class MyAITest extends CellAI {
     public String getAIName() {
         return "MyAI - SuperAI";
     }
-    // The earlier strategy is retained below as reference code.
-    /*
-    @Override
-    public Location select(Grid grid) {
-        /*
-         * Replace this starter strategy.
-         *
-         * Helpful information:
-         *   getID()                     -> your cell ID
-         *   grid.getRows()              -> number of rows
-         *   grid.getCols()              -> number of columns
-         *   grid.getCell(r, c)          -> -1 if dead, otherwise an AI ID
-         *   GridFunctions.getNeighbors  -> number of living neighbors
-         *   GridFunctions.mostCommonNeighbor -> most common neighboring AI
-         *   randomInt(bound)            -> reproducible random integer
-        
-        int MyID = getID();
-        int Wcount = 0;
-        int Lcount = 0;
-        int[][] Ids = new int[grid.getRows()][grid.getCols()];
-        for (int r = 0; r < grid.getRows(); r++) {
-            for (int c = 0; c < grid.getCols(); c++) {
-                Ids[r][c] = grid.getCell(r, c);
-                if(Ids[r][c] == MyID) {
-                    Wcount++;
-                } else if(Ids[r][c] != -1) {
-                    Lcount++;
-                }
-            }
-        }
-        if (Wcount <= Lcount) {
-            MyAIDefense defense = new MyAIDefense(MyID);
-            Location defenseLocation = defense.select(grid);
-            if (defenseLocation != null) {
-                return defenseLocation;
-            }
-        } else {
-            MyAIOffense offence = new MyAIOffense(MyID);
-            Location offenceLocation = offence.select(grid);
-            if (offenceLocation != null) {
-                return offenceLocation;
-            }
-        }
-
-        // targets a 3-in-a-row oscillator
-        for (int r = 0; r < grid.getRows(); r++) {
-            for (int c = 0; c < grid.getCols(); c++) {
-                if (Ids[r][c] != MyID && Ids[r][c] != -1) {
-                    int neighbors = GridFunctions.getNeighbors(r, c, grid);
-                    MyAIOscilator ocilator = new MyAIOscilator(MyID);
-                    Location ocilatorLocation = ocilator.select(grid);
-                    if (ocilatorLocation != null) {
-                        return ocilatorLocation;
-                    }
-
-                    if (neighbors == 3) {
-                        MyAIOffense stillLife = new MyAIOffense(MyID);
-                        Location stillLifeLocation = stillLife.select(grid);
-                        if (stillLifeLocation != null) {
-                            return stillLifeLocation;
-                        }
-                    }
-                }
-            }
-        }
-
-        for (int r = 0; r < grid.getRows(); r++) {
-            for (int c = 0; c < grid.getCols(); c++) {
-                if (Ids[r][c] != -1 && Ids[r][c] != MyID) {
-                    if (GridFunctions.getNeighbors(r, c, grid) == 3) {
-                        if (GridFunctions.mostCommonNeighbor(r, c, grid) != MyID) {
-                            if (c == 0 || r == 0) {
-                                return new Location(r, c + 2);
-                            } else if (c == 0 || r == grid.getRows() - 1) {
-                                return new Location(r, c + 2);
-                            } else if (c == grid.getCols() - 1 || r == 0) {
-                                return new Location(r, c - 2);
-                            } else if (c == grid.getCols() - 1 || r == grid.getRows() - 1) {
-                                return new Location(r, c - 2);
-                            } else {
-                                return new Location(r, c + 2);
-                            }
-                        }
-                    }
-                    return new Location(r, c);
-                }
-            }
-        }
-
-        return new Location(randomInt(grid.getRows()), randomInt(grid.getCols()));
-    }
- */
     // The ID used to distinguish this AI's cells from the opponent's cells.
     int MyID = getID();
 
@@ -266,8 +174,6 @@ public class MyAITest extends CellAI {
         return topMoves;
     }
     public int alphaBetaPruning(int[][] board, int depth, int alpha, int beta, boolean isMaximizing) {
-        // At the search horizon, estimate the position instead of expanding
-        // any more simulated turns.
         if (depth == 0) {
             return evaluateBoard(board);
         }
