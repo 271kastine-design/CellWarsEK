@@ -5,110 +5,25 @@
  * AI Code Name: ChipAI
  *
  * Strategy Description:
- * Replace this comment with a short explanation of the strategy your AI uses.
- * Your final strategy must be fundamentally different from the sample AIs.
+ * This AI tries to combine fast local move evaluation with a deeper minimax-style lookahead.
+ * It ranks the strongest empty spaces using a heuristic based on nearby friendly versus enemy cells,
+ * then evaluates only the top candidates several turns ahead to choose a move that improves board
+ * position while still reacting to the opponent's likely responses.
  */
-public class MyAI extends CellAI {
+public class ChipAI extends CellAI {
 
     @Override
     public String getAIName() {
-        return "MyAI - ChipAI";
+        return "ChipAI";
     }
-    /* 
-    @Override
-    public Location select(Grid grid) {
-        /*
-         * Replace this starter strategy.
-         *
-         * Helpful information:
-         *   getID()                     -> your cell ID
-         *   grid.getRows()              -> number of rows
-         *   grid.getCols()              -> number of columns
-         *   grid.getCell(r, c)          -> -1 if dead, otherwise an AI ID
-         *   GridFunctions.getNeighbors  -> number of living neighbors
-         *   GridFunctions.mostCommonNeighbor -> most common neighboring AI
-         *   randomInt(bound)            -> reproducible random integer
-        
-        int MyID = getID();
-        int Wcount = 0;
-        int Lcount = 0;
-        int[][] Ids = new int[grid.getRows()][grid.getCols()];
-        for (int r = 0; r < grid.getRows(); r++) {
-            for (int c = 0; c < grid.getCols(); c++) {
-                Ids[r][c] = grid.getCell(r, c);
-                if(Ids[r][c] == MyID) {
-                    Wcount++;
-                } else if(Ids[r][c] != -1) {
-                    Lcount++;
-                }
-            }
-        }
-        if (Wcount <= Lcount) {
-            MyAIDefense defense = new MyAIDefense(MyID);
-            Location defenseLocation = defense.select(grid);
-            if (defenseLocation != null) {
-                return defenseLocation;
-            }
-        } else {
-            MyAIOffense offence = new MyAIOffense(MyID);
-            Location offenceLocation = offence.select(grid);
-            if (offenceLocation != null) {
-                return offenceLocation;
-            }
-        }
 
-        // targets a 3-in-a-row oscillator
-        for (int r = 0; r < grid.getRows(); r++) {
-            for (int c = 0; c < grid.getCols(); c++) {
-                if (Ids[r][c] != MyID && Ids[r][c] != -1) {
-                    int neighbors = GridFunctions.getNeighbors(r, c, grid);
-                    MyAIOscilator ocilator = new MyAIOscilator(MyID);
-                    Location ocilatorLocation = ocilator.select(grid);
-                    if (ocilatorLocation != null) {
-                        return ocilatorLocation;
-                    }
-
-                    if (neighbors == 3) {
-                        MyAIOffense stillLife = new MyAIOffense(MyID);
-                        Location stillLifeLocation = stillLife.select(grid);
-                        if (stillLifeLocation != null) {
-                            return stillLifeLocation;
-                        }
-                    }
-                }
-            }
-        }
-
-        for (int r = 0; r < grid.getRows(); r++) {
-            for (int c = 0; c < grid.getCols(); c++) {
-                if (Ids[r][c] != -1 && Ids[r][c] != MyID) {
-                    if (GridFunctions.getNeighbors(r, c, grid) == 3) {
-                        if (GridFunctions.mostCommonNeighbor(r, c, grid) != MyID) {
-                            if (c == 0 || r == 0) {
-                                return new Location(r, c + 2);
-                            } else if (c == 0 || r == grid.getRows() - 1) {
-                                return new Location(r, c + 2);
-                            } else if (c == grid.getCols() - 1 || r == 0) {
-                                return new Location(r, c - 2);
-                            } else if (c == grid.getCols() - 1 || r == grid.getRows() - 1) {
-                                return new Location(r, c - 2);
-                            } else {
-                                return new Location(r, c + 2);
-                            }
-                        }
-                    }
-                    return new Location(r, c);
-                }
-            }
-        }
-
-        return new Location(randomInt(grid.getRows()), randomInt(grid.getCols()));
-    }
- */
+    // Store the AI's assigned player ID once so all later scoring and board checks use the same identity.
     int MyID = getID();
 
     @Override
     public Location select(Grid grid) {
+        // Copy the live game board into a normal 2D array so we can inspect and simulate moves
+        // without mutating the actual game state.
         int[][] currentBoard = new int[grid.getRows()][grid.getCols()];
 
         for (int r = 0; r < grid.getRows(); r++) {
@@ -117,8 +32,10 @@ public class MyAI extends CellAI {
             }
         }
 
+        // Count total owned cells for this AI and the opponent to use in heuristic balance checks.
         int[] cellCounts = countCells(currentBoard, MyID);
 
+        // Keep the highest-scoring nearby moves in a small shortlist before doing deeper search.
         int[] bestQuickScores = {
             Integer.MIN_VALUE,
             Integer.MIN_VALUE,
@@ -129,6 +46,7 @@ public class MyAI extends CellAI {
 
         Location[] bestQuickMoves = new Location[5];
 
+        // Evaluate every open square and rank the best ones by local pressure and board control.
         for (int r = 0; r < grid.getRows(); r++) {
             for (int c = 0; c < grid.getCols(); c++) {
                 if (currentBoard[r][c] == -1) {
@@ -141,6 +59,7 @@ public class MyAI extends CellAI {
                         cellCounts[1]
                     );
 
+                    // Insert the move into the ranked list only if it beats one of the current top entries.
                     for (int i = 0; i < 5; i++) {
                         if (score > bestQuickScores[i]) {
                             for (int j = 4; j > i; j--) {
@@ -157,6 +76,7 @@ public class MyAI extends CellAI {
             }
         }
 
+        // Search the top candidates several moves ahead and pick the one that leads to the best result.
         int bestScore = Integer.MIN_VALUE;
         Location bestMove = null;
 
@@ -182,6 +102,7 @@ public class MyAI extends CellAI {
             }
         }
 
+        // In the unlikely event that no move qualified, just take the first legal open cell.
         if (bestMove == null) {
             for (int r = 0; r < grid.getRows(); r++) {
                 for (int c = 0; c < grid.getCols(); c++) {
@@ -195,6 +116,7 @@ public class MyAI extends CellAI {
         return bestMove;
     }
 
+    // Counts how many spaces belong to this AI and how many are held by the opponent.
     private int[] countCells(int[][] board, int playerID) {
         int myCells = 0;
         int opponentCells = 0;
@@ -212,6 +134,8 @@ public class MyAI extends CellAI {
         return new int[] { myCells, opponentCells };
     }
 
+    // Quick heuristic for a single empty cell. It measures the local neighborhood and adjusts its value
+    // depending on whether the AI is currently ahead or behind in total territory.
     private int quickScore(
         int[][] board,
         int r,
@@ -222,6 +146,8 @@ public class MyAI extends CellAI {
     ) {
         int myNeighbors = 0;
         int opponentNeighbors = 0;
+
+        // Check all eight surrounding tiles for the candidate move.
         for (int ar = -1; ar <= 1; ar++) {
             for (int ac = -1; ac <= 1; ac++) {
                 if (ar == 0 && ac == 0) {
@@ -242,22 +168,22 @@ public class MyAI extends CellAI {
                 }
             }
         }
-        if(opponentCells * 10 < myCells) {
+
+        // The scoring shifts depending on whether the AI is leading or trailing in total cell count.
+        if (opponentCells * 10 < myCells) {
             return opponentNeighbors * 4 - myNeighbors;
-        }
-        else if(opponentCells * 5 < myCells) {
+        } else if (opponentCells * 5 < myCells) {
             return opponentNeighbors * 3 + myNeighbors;
-        } else if(opponentCells * 2 < myCells) {
+        } else if (opponentCells * 2 < myCells) {
             return opponentNeighbors * 2 + myNeighbors;
         } else if (myCells > opponentCells) {
-            return myNeighbors*2 + opponentNeighbors*2;
+            return myNeighbors * 2 + opponentNeighbors * 2;
+        } else {
+            return myNeighbors * 3 - opponentNeighbors;
         }
-        else{
-            return myNeighbors*3 - opponentNeighbors;
-        }
-
     }
 
+    // Helper to duplicate a board before exploring hypothetical next states.
     public int[][] copyBoard(int[][] board) {
         int[][] newBoard = new int[board.length][board[0].length];
         for (int i = 0; i < board.length; i++) {
@@ -267,6 +193,8 @@ public class MyAI extends CellAI {
         }
         return newBoard;
     }
+
+    // Builds a ranked list of the best five legal moves for a given player using the same heuristic.
     public Location[] top5Moves(int[][] board, int playerID) {
         Location[] topMoves = new Location[5];
         int[] scores = new int[5];
@@ -283,6 +211,8 @@ public class MyAI extends CellAI {
                         cellCounts[0],
                         cellCounts[1]
                     );
+
+                    // Insert the move into the top-five list in descending order of score.
                     for (int i = 0; i < 5; i++) {
                         if (score > scores[i]) {
                             for (int j = 4; j > i; j--) {
@@ -299,6 +229,13 @@ public class MyAI extends CellAI {
         }
         return topMoves;
     }
+
+    // Big-O magnitude: this search is roughly O(b^d), where b is the branching factor (about the top moves
+    // considered at each step) and d is the lookahead depth. With a board of size R x C and a top-5 shortlist,
+    // each level scans the board and simulates candidate moves, so the practical cost is still exponential in depth
+    // but much smaller than exploring every legal move on every turn.
+    // Alpha-beta pruning is used to reduce unnecessary search branches in the minimax tree.
+    // It assumes the AI is maximizing its evaluation while the opponent minimizes it.
     public int alphaBetaPruning(int[][] board, int depth, int alpha, int beta, boolean isMaximizing) {
         if (depth == 0) {
             return evaluateBoard(board);
@@ -367,6 +304,7 @@ public class MyAI extends CellAI {
         }
     }
 
+    // Finds any non-empty cell that is not controlled by this AI, which is used as the opponent ID.
     public int findOpponentID(int[][] board) {
         for (int r = 0; r < board.length; r++) {
             for (int c = 0; c < board[0].length; c++) {
@@ -378,6 +316,7 @@ public class MyAI extends CellAI {
         return -1;
     }
 
+    // Evaluation function at a leaf node: reward cells owned by this AI and penalize opponent-owned cells.
     public int evaluateBoard(int[][] board) {
         int myCells = 0;
         int opponentCells = 0;
@@ -395,6 +334,9 @@ public class MyAI extends CellAI {
         return myCells - opponentCells;
     }
 
+    // Simulates a full board update using the game's rules: cells with 2 or 3 neighbors survive,
+    // empty cells become occupied only when exactly 3 neighbors exist, and if a birth happens the
+    // majority surrounding color decides ownership for that space.
     private int[][] calculateNextBoard(int[][] board, int myIDLocal) {
         int rows = board.length;
         int cols = board[0].length;
@@ -407,6 +349,7 @@ public class MyAI extends CellAI {
                 int opponentNeighbors = 0;
                 int opponentID = -1;
 
+                // Count all neighboring occupied cells and split them into friendly vs enemy ownership.
                 for (int dr = -1; dr <= 1; dr++) {
                     for (int dc = -1; dc <= 1; dc++) {
                         if (dr == 0 && dc == 0) {
@@ -429,6 +372,7 @@ public class MyAI extends CellAI {
                     }
                 }
 
+                // Existing cells survive only with exactly two or three live neighbors; otherwise they die.
                 if (board[r][c] != -1) {
                     if (neighbors == 2 || neighbors == 3) {
                         nextBoard[r][c] = board[r][c];
@@ -436,6 +380,7 @@ public class MyAI extends CellAI {
                         nextBoard[r][c] = -1;
                     }
                 } else {
+                    // Empty cells are born only with exactly three adjacent occupied cells.
                     if (neighbors == 3) {
                         if (myNeighbors > opponentNeighbors) {
                             nextBoard[r][c] = myIDLocal;

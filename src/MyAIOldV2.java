@@ -1,4 +1,4 @@
-public class MyAIOldV2 extends MyAI {
+public class MyAIOldV2 extends ChipAI {
     @Override
     public String getAIName() {
         return "MyAI - TrainerAIV2";
