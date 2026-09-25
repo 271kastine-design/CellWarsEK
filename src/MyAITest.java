@@ -5,8 +5,8 @@
  * AI Code Name: ChipAI
  *
  * Strategy Description:
- * Replace this comment with a short explanation of the strategy your AI uses.
- * Your final strategy must be fundamentally different from the sample AIs.
+ * This AI ranks promising empty cells, then uses a shallow alpha-beta search
+ * to choose the move that produces the strongest simulated board.
  */
 public class MyAITest extends CellAI {
 
@@ -15,7 +15,8 @@ public class MyAITest extends CellAI {
     public String getAIName() {
         return "MyAI - SuperAI";
     }
-    /* 
+    // The earlier strategy is retained below as reference code.
+    /*
     @Override
     public Location select(Grid grid) {
         /*
@@ -106,10 +107,13 @@ public class MyAITest extends CellAI {
         return new Location(randomInt(grid.getRows()), randomInt(grid.getCols()));
     }
  */
+    // The ID used to distinguish this AI's cells from the opponent's cells.
     int MyID = getID();
 
     @Override
     public Location select(Grid grid) {
+        // Copy the engine's grid into a plain array so search simulations do
+        // not modify the real match state.
         int[][] currentBoard = new int[grid.getRows()][grid.getCols()];
 
         for (int r = 0; r < grid.getRows(); r++) {
@@ -118,6 +122,8 @@ public class MyAITest extends CellAI {
             }
         }
 
+        // Keep only the five highest-scoring moves for the more expensive
+        // minimax search that follows.
         int[] bestQuickScores = {
             Integer.MIN_VALUE,
             Integer.MIN_VALUE,
@@ -128,6 +134,8 @@ public class MyAITest extends CellAI {
 
         Location[] bestQuickMoves = new Location[5];
 
+        // Use the inexpensive local score to filter the full set of empty
+        // cells before exploring future generations.
         for (int r = 0; r < grid.getRows(); r++) {
             for (int c = 0; c < grid.getCols(); c++) {
                 if (currentBoard[r][c] == -1) {
@@ -149,6 +157,7 @@ public class MyAITest extends CellAI {
             }
         }
 
+        // Compare the shortlisted moves by looking ahead several turns.
         int bestScore = Integer.MIN_VALUE;
         Location bestMove = null;
 
@@ -158,6 +167,8 @@ public class MyAITest extends CellAI {
                 int[][] newBoard = copyBoard(currentBoard);
                 newBoard[move.getRow()][move.getCol()] = MyID;
 
+                // Apply the candidate move and advance the simulated board
+                // once before asking alpha-beta to evaluate it.
                 int[][] futureBoard = calculateNextBoard(newBoard, MyID);
                 int score = alphaBetaPruning(
                     futureBoard,
@@ -174,6 +185,8 @@ public class MyAITest extends CellAI {
             }
         }
 
+        // If no candidate survived the search, select the first available
+        // empty cell as a reliable fallback.
         if (bestMove == null) {
             for (int r = 0; r < grid.getRows(); r++) {
                 for (int c = 0; c < grid.getCols(); c++) {
@@ -188,6 +201,8 @@ public class MyAITest extends CellAI {
     }
 
     private int quickScore(int[][] board, int r, int c, int playerID) {
+        // Favor empty cells surrounded by living cells. Both friendly and
+        // opposing neighbors contribute because either can create a birth.
         int myNeighbors = 0;
         int opponentNeighbors = 0;
 
@@ -216,6 +231,7 @@ public class MyAITest extends CellAI {
     }
 
     public int[][] copyBoard(int[][] board) {
+        // Create a deep copy so recursive simulations remain independent.
         int[][] newBoard = new int[board.length][board[0].length];
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[0].length; j++) {
@@ -225,6 +241,7 @@ public class MyAITest extends CellAI {
         return newBoard;
     }
     public Location[] top5Moves(int[][] board, int playerID) {
+        // Build the same five-move shortlist for each recursive search node.
         Location[] topMoves = new Location[5];
         int[] scores = new int[5];
 
@@ -249,6 +266,8 @@ public class MyAITest extends CellAI {
         return topMoves;
     }
     public int alphaBetaPruning(int[][] board, int depth, int alpha, int beta, boolean isMaximizing) {
+        // At the search horizon, estimate the position instead of expanding
+        // any more simulated turns.
         if (depth == 0) {
             return evaluateBoard(board);
         }
@@ -256,6 +275,9 @@ public class MyAITest extends CellAI {
         int opponentID = findOpponentID(board);
 
         if (isMaximizing) {
+            // On maximizing turns, try this AI's moves and keep the highest
+            // resulting score. Alpha-beta stops branches that cannot improve
+            // the decision already found.
             int bestScore = Integer.MIN_VALUE;
             Location[] moves = top5Moves(board, MyID);
 
@@ -285,6 +307,8 @@ public class MyAITest extends CellAI {
 
             return bestScore;
         } else {
+            // On minimizing turns, model the opponent choosing the outcome
+            // that is worst for this AI.
             int bestScore = Integer.MAX_VALUE;
             Location[] moves = top5Moves(board, opponentID);
 
@@ -317,6 +341,7 @@ public class MyAITest extends CellAI {
     }
 
     public int findOpponentID(int[][] board) {
+        // The first living cell that is not ours identifies the opponent.
         for (int r = 0; r < board.length; r++) {
             for (int c = 0; c < board[0].length; c++) {
                 if (board[r][c] != -1 && board[r][c] != MyID) {
@@ -328,6 +353,7 @@ public class MyAITest extends CellAI {
     }
 
     public int evaluateBoard(int[][] board) {
+        // Use the difference in living-cell counts as the leaf-node score.
         int myCells = 0;
         int opponentCells = 0;
 
@@ -345,6 +371,8 @@ public class MyAITest extends CellAI {
     }
 
     private int[][] calculateNextBoard(int[][] board, int myIDLocal) {
+        // Reproduce one cellular-automaton turn without changing the input
+        // board. Every cell is evaluated from the same previous generation.
         int rows = board.length;
         int cols = board[0].length;
         int[][] nextBoard = new int[rows][cols];
@@ -356,6 +384,8 @@ public class MyAITest extends CellAI {
                 int opponentNeighbors = 0;
                 int opponentID = -1;
 
+                // Count all eight surrounding cells and track which side has
+                // the local majority for a newly born cell.
                 for (int dr = -1; dr <= 1; dr++) {
                     for (int dc = -1; dc <= 1; dc++) {
                         if (dr == 0 && dc == 0) {
@@ -378,6 +408,8 @@ public class MyAITest extends CellAI {
                     }
                 }
 
+                // Living cells survive with two or three neighbors; empty
+                // cells are born only when they have exactly three.
                 if (board[r][c] != -1) {
                     if (neighbors == 2 || neighbors == 3) {
                         nextBoard[r][c] = board[r][c];
